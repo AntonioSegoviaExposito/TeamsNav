@@ -7,7 +7,7 @@ MCP server that lets an agent search, read and write Microsoft Teams messages th
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `TENANT` | `organizations` | Microsoft Entra tenant (domain or id), e.g. `contoso.com` |
-| `CLIENT_ID` | your Entra public client app id | Public client used for the device-code sign-in |
+| `CLIENT_ID` | `14d82eec-204b-4c2f-b7e8-296a70dab67e` | Public client for the device-code sign-in. Default is Microsoft Graph Command Line Tools; no secret. |
 
 opencode (`~/.config/opencode/opencode.json`):
 
@@ -17,7 +17,7 @@ opencode (`~/.config/opencode/opencode.json`):
     "teams-nav": {
       "type": "local",
       "command": ["pnpm", "dlx", "github:AntonioSegoviaExposito/TeamsNav"],
-      "environment": { "TENANT": "contoso.com", "CLIENT_ID": "11111111-aaaa-1111-aaaa-111111111111" },
+      "environment": { "TENANT": "contoso.com", "CLIENT_ID": "14d82eec-204b-4c2f-b7e8-296a70dab67e" },
       "enabled": true
     }
   }
@@ -32,7 +32,7 @@ Clients using the `mcpServers` format (Claude Desktop, Cursor, …):
     "teams-nav": {
       "command": "pnpm",
       "args": ["dlx", "github:AntonioSegoviaExposito/TeamsNav"],
-      "env": { "TENANT": "contoso.com", "CLIENT_ID": "11111111-aaaa-1111-aaaa-111111111111" }
+      "env": { "TENANT": "contoso.com", "CLIENT_ID": "14d82eec-204b-4c2f-b7e8-296a70dab67e" }
     }
   }
 }
