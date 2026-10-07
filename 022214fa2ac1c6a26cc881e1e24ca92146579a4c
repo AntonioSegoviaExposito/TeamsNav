@@ -1,0 +1,19 @@
+package.json
+  s_319165a34ef125::t_e712ff4b928ffb 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "022214fa2ac1c6a26cc881e1e24ca92146579a4c",
+  "prompts": {},
+  "sessions": {
+    "s_319165a34ef125": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_319165a34ef12fPPCyCaRdDkk5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "antoniose <antoniose@ext.inditex.com>"
+    }
+  }
+}
