@@ -1,0 +1,19 @@
+src/teams.js
+  s_319165a34ef125::t_b627fd46e75518 1-426
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "20192221e2696b6b06c7eaf896e235c07c0da49d",
+  "prompts": {},
+  "sessions": {
+    "s_319165a34ef125": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_319165a34ef12fPPCyCaRdDkk5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "antoniose <antoniose@ext.inditex.com>"
+    }
+  }
+}
