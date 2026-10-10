@@ -1,0 +1,19 @@
+src/server.js
+  s_319165a34ef125::t_17dede8f6999c2 29,119-130,135,138,141-143,145,154,160,198-199,201-202,208,212,217-218,220-221,227-228,231,233-234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "0572794b18eba771e0491f6e7c751d9ddebff681",
+  "prompts": {},
+  "sessions": {
+    "s_319165a34ef125": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_319165a34ef12fPPCyCaRdDkk5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "antoniose <antoniose@ext.inditex.com>"
+    }
+  }
+}
