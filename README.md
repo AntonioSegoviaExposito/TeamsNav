@@ -54,8 +54,8 @@ The first tool call returns a Microsoft device-code message (URL + code). The ag
 | `teams_chats` | Recent chats (1:1, group, meeting) with handle, type, last message and `[unread]`; filter by name |
 | `teams_search` | Keyword search over chat and channel messages, each result with its message handle |
 | `teams_read` | Latest messages of a chat or channel, or the messages before and after a given message (channel messages are read inside their thread) |
-| `teams_send` | Send a message to a chat |
-| `teams_chat_mode` | `start` / `wait` / `reply` / `stop` a conversation on the user's behalf; messages are prefixed with 🤖 |
+| `teams_send` | Send a message to a chat. Prefixed with 🤖 unless `belikehuman` is true. `text` and `message` are aliases; passing both is an error |
+| `teams_chat_mode` | `start` / `wait` / `reply` / `stop` on the user's behalf. Same 🤖 prefix and `text`/`message` rules as `teams_send` |
 
 Handles are short and stable: chats `C` + 5 characters, channels `K` + 5 characters, messages `<handle>/<messageId>`. Every line an agent reads starts with a handle it can pass back to `teams_read`, `teams_send` or `teams_chat_mode`.
 
