@@ -1,0 +1,19 @@
+README.md
+  s_319165a34ef125::t_11e9c1cd57a417 57-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "cdc1c6bd981d49ab4974bffaf6ef89ee9009973d",
+  "prompts": {},
+  "sessions": {
+    "s_319165a34ef125": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_319165a34ef12fPPCyCaRdDkk5",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "antoniose <antoniose@ext.inditex.com>"
+    }
+  }
+}
