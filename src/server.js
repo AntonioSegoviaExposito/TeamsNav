@@ -26,7 +26,7 @@ function line(handle, m, myId, { full = false, mark = '' } = {}) {
 const server = new McpServer(
   { name: 'teams-nav', version: '1.0.0' },
   {
-    instructions: 'Microsoft Teams through Microsoft Graph, acting as the signed-in user. Chats have handles like Cab12x, channels like Kab12x, and a message is <handle>/<messageId>. Typical flow: find with teams_search or teams_chats, read the conversation around a message with teams_read, write with teams_send or teams_chat_mode. On first use a tool returns a Microsoft sign-in code: show it to the user and call the tool again once they finish.',
+    instructions: 'Microsoft Teams through Microsoft Graph, acting as the signed-in user. Chats have handles like Cab12x, channels like Kab12x, and a message is <handle>/<messageId>. Typical flow: find with teams_search or teams_chats, read the conversation around a message with teams_read, write with teams_send or teams_chat_mode. Both prefix the message with 🤖 unless belikehuman is true, and accept the body as text or message, not both. On first use a tool returns a Microsoft sign-in code: show it to the user and call the tool again once they finish.',
   },
 );
 
@@ -116,19 +116,33 @@ tool(
   },
 );
 
+const BOT = '🤖';
+const stamp = (text, belikehuman) => (belikehuman || text.startsWith(BOT) ? text : `${BOT} ${text}`);
+const messageBody = ({ text, message }) => {
+  if (text !== undefined && message !== undefined) throw new Error('pass `text` or `message`, not both');
+  return text ?? message;
+};
+const bodyFields = {
+  text: z.string().min(1).optional().describe('Message text. Alias of `message`. Pass one, not both.'),
+  message: z.string().min(1).optional().describe('Message text. Alias of `text`. Pass one, not both.'),
+  belikehuman: z.boolean().optional().describe('Send the text as written, without the 🤖 prefix. Default false.'),
+};
+
 tool(
   'teams_send',
   {
     title: 'Send a Teams message',
-    description: 'Send a message to a Teams chat as the signed-in user. Only send what the user asked to send. `chat` accepts a chat handle, a message handle (sends to that message\'s chat), a chat name or a raw chat id. Line breaks are kept. Returns the handle of the sent message. Channels are read-only.',
+    description: 'Send a message to a Teams chat as the signed-in user. Only send what the user asked to send. The message is prefixed with 🤖 unless `belikehuman` is true. Pass the body as `text` or `message`, not both. `chat` accepts a chat handle, a message handle (sends to that message\'s chat), a chat name or a raw chat id. Line breaks are kept. Returns the handle of the sent message. Channels are read-only.',
     inputSchema: {
       chat: z.string().min(1).describe('Chat handle (C…), message handle, chat name or raw chat id.'),
-      text: z.string().min(1).describe('Message text.'),
+      ...bodyFields,
     },
   },
-  async ({ chat, text }) => {
+  async ({ chat, belikehuman, ...rest }) => {
+    const body = messageBody(rest);
+    if (!body) throw new Error('needs `text` or `message`');
     const conv = await resolveTarget(chat);
-    const sent = await send(conv, text);
+    const sent = await send(conv, stamp(body, belikehuman));
     return `SENT  ·  ${conv.title}\n${line(conv.handle, sent, (await me()).id, { full: true })}`;
   },
 );
@@ -137,15 +151,13 @@ tool(
 
 const IDLE_MS = 10 * 60_000;
 const POLL_MS = 5000;
-const BOT = '🤖';
-const sessions = new Map(); // chat id -> { conv, cursor, idleSince, timer }
-const withBot = (text) => (text.startsWith(BOT) ? text : `${BOT} ${text}`);
+const sessions = new Map(); // chat id -> { conv, cursor, idleSince, timer, belikehuman }
 
 async function close(session, text) {
   if (sessions.get(session.conv.id) !== session) return;
   sessions.delete(session.conv.id);
   clearTimeout(session.timer);
-  await send(session.conv, withBot(text)).catch(() => {});
+  await send(session.conv, stamp(text, session.belikehuman)).catch(() => {});
 }
 
 function arm(session) {
@@ -183,39 +195,43 @@ tool(
   {
     title: 'Chat on the user\'s behalf',
     description: [
-      'Hold a conversation in a Teams chat on the user\'s behalf. Use it only when the user explicitly asks you to talk in a chat for them. Every message you post is prefixed with 🤖.',
-      '- start: posts `text` announcing that an AI agent is answering from the user\'s account (write it in the chat\'s language; default is an English notice), then waits.',
+      'Hold a conversation in a Teams chat on the user\'s behalf. Use it only when the user explicitly asks you to talk in a chat for them. Every message you post is prefixed with 🤖 unless `belikehuman` is true. Pass the body as `text` or `message`, not both.',
+      '- start: posts `text` or `message` announcing that an AI agent is answering from the user\'s account (write it in the chat\'s language; default is an English notice), then waits.',
       '- wait: waits for new messages from other people.',
-      '- reply: posts `text`, then waits.',
-      '- stop: posts `text` (default "Chat mode off.") and ends chat mode.',
+      '- reply: posts `text` or `message` (required), then waits.',
+      '- stop: posts `text` or `message` (default "Chat mode off.") and ends chat mode.',
       'Waits return as soon as someone else writes, or after `seconds` with nothing new: then call wait again. Messages that arrive while you are replying are never lost. Chat mode turns itself off, with a notice in the chat, after 10 minutes without messages from others. Never present yourself as the user, never share secrets, and ask the user before agreeing to anything on their behalf.',
     ].join('\n'),
     inputSchema: {
       action: z.enum(['start', 'wait', 'reply', 'stop']),
       chat: z.string().min(1).describe('Chat handle (C…), message handle, chat name or raw chat id.'),
-      text: z.string().optional().describe('Message for start, reply (required) and stop.'),
+      ...bodyFields,
       seconds: z.number().int().min(5).max(600).optional().describe('Maximum wait for new messages (default 50).'),
     },
   },
-  async ({ action, chat, text, seconds = 50 }, extra) => {
+  async ({ action, chat, belikehuman, seconds = 50, ...rest }, extra) => {
     const conv = await resolveTarget(chat);
     if (conv.kind !== 'chat') throw new Error('chat mode only works in chats (C handles)');
     const head = `CHAT MODE ${conv.handle}  ·  ${conv.title}`;
     let session = sessions.get(conv.id);
+    const body = messageBody(rest);
+    const asHuman = !!belikehuman;
     if (action === 'start' && !session) {
-      const sent = await send(conv, withBot(text ?? `Chat mode on: an AI agent is replying from ${(await me()).name}'s account. It turns off after 10 minutes without messages.`));
-      session = { conv, cursor: sent.at };
+      const sent = await send(conv, stamp(body ?? `Chat mode on: an AI agent is replying from ${(await me()).name}'s account. It turns off after 10 minutes without messages.`, asHuman));
+      session = { conv, cursor: sent.at, belikehuman: asHuman };
       sessions.set(conv.id, session);
       arm(session);
     }
     if (!session) throw new Error(`chat mode is not on in ${conv.handle}; use action "start" first`);
     if (action === 'stop') {
-      await close(session, text ?? 'Chat mode off.');
+      session.belikehuman = asHuman;
+      await close(session, body ?? 'Chat mode off.');
       return `${head}  ·  off`;
     }
+    if (belikehuman !== undefined) session.belikehuman = asHuman;
     if (action === 'reply') {
-      if (!text) throw new Error('reply needs `text`');
-      await send(conv, withBot(text));
+      if (!body) throw new Error('reply needs `text` or `message`');
+      await send(conv, stamp(body, asHuman));
       arm(session);
     }
     const incoming = await waitFor(session, seconds, extra);
